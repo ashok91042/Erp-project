@@ -1,0 +1,3 @@
+import { Bell, CheckCircle2, FileText, ShieldAlert } from 'lucide-react';
+const icons={alert:ShieldAlert,success:CheckCircle2,info:FileText};
+export default function Notification({type='info',title,text,time}){const I=icons[type]||Bell;return <div className="flex gap-3 rounded-xl border border-slate-100 bg-white p-4"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-red-50 text-red-600"><I size={17}/></div><div className="min-w-0 flex-1"><div className="font-bold">{title}</div><p className="mt-1 text-sm text-slate-500">{text}</p><div className="mt-2 text-[11px] text-slate-400">{time}</div></div></div>}

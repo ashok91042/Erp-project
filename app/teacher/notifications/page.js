@@ -1,0 +1,3 @@
+import AppShell from '@/components/AppShell';
+import Notification from '@/components/Notification';
+export default function Notifications(){return <AppShell role="teacher" title="Notifications"><div className="max-w-3xl space-y-3"><Notification type="alert" title="Attendance change request" text="Rahul Verma requested an attendance correction for 25 Sep 2026." time="10 minutes ago"/><Notification type="info" title="Exam scheduled" text="Unit Test 2 for Class 10A is scheduled for 24 Sep 2026." time="Yesterday"/><Notification type="success" title="Report generated" text="Class 10A attendance report is ready." time="2 days ago"/></div></AppShell>}

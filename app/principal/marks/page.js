@@ -1,0 +1,3 @@
+import AppShell from '@/components/AppShell';
+import MarksTable from '@/components/MarksTable';
+export default function Marks(){return <AppShell role="principal" title="Exams & Marks"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-2xl font-black">Exams & Marks</h2><p className="text-sm text-slate-500">Review academic performance and examination results.</p></div><div className="flex gap-2"><select className="rounded-xl border bg-white px-3 py-2"><option>Class 10A</option></select><select className="rounded-xl border bg-white px-3 py-2"><option>Mathematics</option></select></div></div><MarksTable/></AppShell>}

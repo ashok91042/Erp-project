@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --erp-red: #e51c2a;
+  --erp-red-dark: #b90f1c;
+  --erp-black: #090b0f;
+  --erp-panel: #ffffff;
+  --erp-muted: #64748b;
+  --erp-border: #e5e7eb;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f3f4f6;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+.erp-shell { min-height: 100vh; background: #f4f5f7; }
+.erp-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.erp-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+
+.hero-gradient {
+  background:
+    radial-gradient(circle at 12% 40%, rgba(229, 28, 42, .30), transparent 25%),
+    radial-gradient(circle at 86% 20%, rgba(229, 28, 42, .18), transparent 24%),
+    linear-gradient(105deg, #05070b 0%, #0b0c10 55%, #15070a 100%);
+}
+
+.red-glow { box-shadow: 0 10px 28px rgba(229, 28, 42, .18); }
+.card-shadow { box-shadow: 0 8px 26px rgba(15, 23, 42, .08); }
+
+@media (max-width: 900px) {
+  .desktop-only { display: none !important; }
+}
