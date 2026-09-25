@@ -17,22 +17,39 @@ Frontend-only AcademicERP dashboard inspired by the supplied UI reference.
 
 ## Run in VS Code
 
+The app needs **two processes**: the Next.js frontend (port 3000) and the Express API (port 4000).
+
 ```bash
 cd academic-erp-client
 npm install
+```
+
+Terminal 1 — API backend (required for login):
+
+```bash
+npm run api        # or: cd server && npm install && npm start
+```
+
+Terminal 2 — frontend:
+
+```bash
 npm run dev
 ```
 
 Open `http://localhost:3000`.
 
+> ⚠️ If login shows **"Login failed: Failed to fetch. Is the API running on :4000?"**,
+> the backend in Terminal 1 isn't running. Start it first, then check
+> `http://localhost:4000/api/health` returns `{"status":"ok",...}`.
+
 ## Demo login
 
-Any valid email + password of 4+ characters works. Select a role before clicking Login.
+Pick a role on the login screen — the email must match that role's demo account
+(any password of 4+ characters works):
 
-Example:
-- Principal: `principal@academic-erp.com` / `demo123`
-- Teacher: `teacher@academic-erp.com` / `demo123`
-- Parent: `parent@academic-erp.com` / `demo123`
+- Principal: `principal@school.edu` / `demo123`
+- Teacher: `lakshmi@school.edu` / `demo123`
+- Parent: `parent.demo@mail.com` / `demo123`
 
 The selected role and user are stored in `sessionStorage`, so closing the browser tab ends the session. Use Logout to clear the session immediately.
 

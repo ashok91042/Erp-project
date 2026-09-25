@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "api": "npm --prefix server start",
+    "api:dev": "npm --prefix server run dev",
+    "test": "npm --prefix server test"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.13",
