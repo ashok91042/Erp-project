@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Eye, EyeOff, ShieldCheck, Zap, Bell, Users, FileText, Cloud } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, ShieldCheck, Zap, Bell, Users, FileText } from "lucide-react";
 
 const roles = ["principal", "teacher", "parent"];
 const names = { principal: "Principal", teacher: "Teacher", parent: "Parent" };
@@ -63,7 +63,7 @@ export default function LoginPage() {
         <header className="flex items-center justify-between gap-4 pb-7">
           <div className="flex items-center gap-3">
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-red-600 shadow-lg shadow-red-900/40"><GraduationCap size={28}/></div>
-            <div><div className="text-2xl font-black">Academic<span className="text-red-500">ERP</span></div><div className="text-xs text-slate-400">Team 2 — AI-ERP Alpha</div></div>
+            <div><div className="text-2xl font-black">Academic<span className="text-red-500">ERP</span></div></div>
           </div>
           <div className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
             <span>Smarter Management</span><span>Stronger Education</span><span>Secure • Scalable • Connected</span>
@@ -96,9 +96,6 @@ export default function LoginPage() {
               <div className="mt-4 flex items-center justify-between text-sm"><label className="flex items-center gap-2"><input checked={remember} onChange={(e)=>setRemember(e.target.checked)} type="checkbox" className="accent-red-600"/> Remember me</label><button type="button" className="font-bold text-red-600">Forgot password?</button></div>
               {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-600">{error}</p>}
               <button disabled={busy} className="mt-6 w-full rounded-xl bg-red-600 py-3.5 font-black text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:opacity-60">{busy ? "Signing in…" : "Login"}</button>
-              <div className="my-6 flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-200"/>or continue with<span className="h-px flex-1 bg-slate-200"/></div>
-              <div className="grid grid-cols-2 gap-3"><button type="button" className="rounded-xl border border-slate-200 py-3 text-sm font-bold hover:bg-slate-50">Google</button><button type="button" className="rounded-xl border border-slate-200 py-3 text-sm font-bold hover:bg-slate-50">GitHub</button></div>
-              <div className="mt-7 grid grid-cols-2 gap-3 text-xs text-slate-500"><div className="flex items-center gap-2"><ShieldCheck size={16} className="text-red-600"/> Secure authentication</div><div className="flex items-center gap-2"><Cloud size={16} className="text-red-600"/> Cloud ready</div></div>
             </form>
           </div>
         </section>

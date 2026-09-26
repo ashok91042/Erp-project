@@ -3,9 +3,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 require("dotenv").config();
 
-const { attachUser, requireRole } = require("./middleware/auth");
+const { attachUser, requireRole, EMAIL_RE } = require("./middleware/auth");
 const { globalLimiter, writeLimiter } = require("./middleware/rateLimit");
-const { ownsStudent } = require("./middleware/ownership");
+const { ownsStudent, UUID_RE } = require("./middleware/ownership");
 const attendanceRoutes = require("./routes/attendance");
 const requestRoutes = require("./routes/requests");
 const pool = require("./db/pool");
@@ -14,7 +14,28 @@ const app = express();
 app.set("trust proxy", 1); // correct client IPs behind reverse proxies (needed for rate limiting)
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(globalLimiter);
-app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
+// CORS: CORS_ORIGIN may be a comma-separated allowlist (exact origins).
+// Local dev origins (localhost / 127.0.0.1 / [::1], any port, http|https) are
+// always allowed so opening the client via 127.0.0.1 or another port doesn't
+// fail the browser check. When CORS_ORIGIN is unset we keep "*" (allow all).
+const corsAllowlist = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const LOCAL_ORIGIN_RE = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/;
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // same-origin / curl / server-to-server
+      if (corsAllowlist.includes("*")) return cb(null, "*");
+      if (corsAllowlist.includes(origin) || LOCAL_ORIGIN_RE.test(origin)) {
+        return cb(null, origin);
+      }
+      return cb(null, false); // disallowed origin → browser blocks (as intended)
+    },
+  })
+);
 app.use(express.json({ limit: "100kb" }));
 app.use(attachUser);
 
@@ -31,6 +52,21 @@ app.get("/api/health", async (_req, res) => {
 // ---- Domain routes ----
 // BOLA note: teachers see only their class, parents only their children,
 // principals see all. Reads require authentication.
+/** GET /api/classes — class list for pickers (all roles may read per RLS) */
+app.get("/api/classes", requireRole("teacher", "principal", "parent"), async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `select c.id, c.name, u.full_name as teacher_name
+       from public.classes c left join public.users u on u.id = c.teacher_id
+       order by c.name`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("[classes] query failed:", err.message);
+    res.status(500).json({ error: "Failed to load classes" });
+  }
+});
+
 app.get("/api/students", requireRole("teacher", "principal", "parent"), async (req, res) => {
   const params = [];
   let where = "";
@@ -43,8 +79,11 @@ app.get("/api/students", requireRole("teacher", "principal", "parent"), async (r
   }
   try {
     const { rows } = await pool.query(
-      `select s.id, s.roll_no, s.full_name, c.name as class_name
-       from public.students s left join public.classes c on c.id = s.class_id
+      `select s.id, s.roll_no, s.full_name, c.name as class_name,
+              s.parent_email, pu.full_name as parent_name
+       from public.students s
+       left join public.classes c on c.id = s.class_id
+       left join public.users pu on pu.email = s.parent_email and pu.role = 'parent'
        ${where} order by s.roll_no`,
       params
     );
@@ -52,6 +91,46 @@ app.get("/api/students", requireRole("teacher", "principal", "parent"), async (r
   } catch (err) {
     console.error("[students] query failed:", err.message);
     res.status(500).json({ error: "Failed to load students" });
+  }
+});
+
+/** POST /api/students — principal creates a student (Manage Users → Add Student) */
+app.post("/api/students", writeLimiter, requireRole("principal"), async (req, res) => {
+  const { rollNo, fullName, classId, parentEmail } = req.body || {};
+  if (typeof rollNo !== "string" || !rollNo.trim() || rollNo.trim().length > 50) {
+    return res.status(400).json({ error: "rollNo is required (max 50 chars)" });
+  }
+  if (typeof fullName !== "string" || !fullName.trim() || fullName.trim().length > 100) {
+    return res.status(400).json({ error: "fullName is required (max 100 chars)" });
+  }
+  if (classId && !UUID_RE.test(classId)) {
+    return res.status(400).json({ error: "Invalid class id" });
+  }
+  if (parentEmail && (typeof parentEmail !== "string" || !EMAIL_RE.test(parentEmail))) {
+    return res.status(400).json({ error: "parentEmail must be a valid email" });
+  }
+  try {
+    const { rows } = await pool.query(
+      `with ins as (
+         insert into public.students (roll_no, full_name, class_id, parent_email)
+         values ($1, $2, $3, $4)
+         returning *
+       )
+       select i.id, i.roll_no, i.full_name, c.name as class_name, i.parent_email, i.created_at
+       from ins i left join public.classes c on c.id = i.class_id`,
+      [
+        rollNo.trim(),
+        fullName.trim(),
+        classId || null,
+        parentEmail ? parentEmail.trim().toLowerCase() : null,
+      ]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    if (err.code === "23505") return res.status(409).json({ error: "Roll number already exists" });
+    if (err.code === "23503") return res.status(400).json({ error: "Unknown class id" });
+    console.error("[students] create failed:", err.message);
+    res.status(500).json({ error: "Failed to create student" });
   }
 });
 
