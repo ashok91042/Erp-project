@@ -99,7 +99,7 @@ router.get("/", requireRole("teacher", "principal", "parent"), async (req, res) 
   }
   try {
     const { rows } = await pool.query(
-      `select s.id, s.roll_no, s.full_name,
+      `select s.id, s.roll_no, s.full_name, c.name as class_name,
               coalesce(a.fn_present, true) as fn_present,
               coalesce(a.an_present, true) as an_present,
               coalesce(a.remarks, '-')     as remarks,

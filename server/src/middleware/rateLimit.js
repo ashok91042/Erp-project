@@ -30,4 +30,11 @@ module.exports = {
     windowMs: num("RL_REQUESTS_WINDOW_MS", 15 * 60 * 1000),
     limit: num("RL_REQUESTS_MAX", 20),
   }),
+  // Credential stuffing / password guessing on /api/auth/login
+  loginLimiter: rateLimit({
+    ...base,
+    windowMs: num("RL_LOGIN_WINDOW_MS", 15 * 60 * 1000),
+    limit: num("RL_LOGIN_MAX", 10),
+    message: { error: "Too many sign-in attempts — wait a few minutes and try again." },
+  }),
 };

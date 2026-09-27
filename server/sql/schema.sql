@@ -1,5 +1,5 @@
 -- ============================================================
--- Academic ERP â€” Supabase Postgres schema with Row Level Security
+-- Academic ERP — Supabase Postgres schema with Row Level Security
 -- ============================================================
 
 -- ---------- USERS ----------
@@ -8,8 +8,13 @@ create table if not exists public.users (
   email         text unique not null,
   full_name     text not null,
   role          text not null check (role in ('principal','teacher','parent')),
+  password_hash text,            -- bcrypt; null = cannot log in with a password
   created_at    timestamptz not null default now()
 );
+
+-- Password login (added after the initial schema).
+alter table public.users add column if not exists password_hash text;
+
 
 -- ---------- CLASSES ----------
 create table if not exists public.classes (
@@ -139,12 +144,12 @@ create index if not exists idx_attendance_student on public.attendance(student_i
 create index if not exists idx_marks_student on public.marks(student_id);
 create index if not exists idx_requests_status on public.permission_requests(status);
 -- ---------- SEED DEMO DATA (idempotent) ----------
-insert into public.users (email, full_name, role)
+insert into public.users (email, full_name, role, password_hash)
 values
-  ('principal@school.edu',  'Dr. Meera Krishnan',  'principal'),
-  ('lakshmi@school.edu',    'Mrs. Lakshmi Menon',  'teacher'),
-  ('parent.demo@mail.com',  'Demo Parent',         'parent')
-on conflict (email) do nothing;
+  ('principal@school.edu',  'Dr. Meera Krishnan',  'principal', '$2b$10$ApSkNMi2Kvx4Cr7i7xr/hOwBKG3hlFkM9reBrlBiJXCQfaIT51C9C'),
+  ('lakshmi@school.edu',    'Mrs. Lakshmi Menon',  'teacher',   '$2b$10$ApSkNMi2Kvx4Cr7i7xr/hOwBKG3hlFkM9reBrlBiJXCQfaIT51C9C'),
+  ('parent.demo@mail.com',  'Demo Parent',         'parent',    '$2b$10$ApSkNMi2Kvx4Cr7i7xr/hOwBKG3hlFkM9reBrlBiJXCQfaIT51C9C')
+on conflict (email) do update set password_hash = excluded.password_hash;
 
 insert into public.classes (name, teacher_id)
 select 'Class 10A', u.id from public.users u

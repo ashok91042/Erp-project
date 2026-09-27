@@ -2,7 +2,7 @@
 import AppShell from '@/components/AppShell';
 import { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import { getAttendance, saveAttendance } from '@/lib/api';
+import { getAttendance, saveAttendance, getClasses } from '@/lib/api';
 
 function Toggle({ present, onClick }) {
   return (
@@ -19,8 +19,11 @@ function Toggle({ present, onClick }) {
 export default function Attendance() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [rows, setRows] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => { getClasses().then(setClasses).catch(() => setClasses([])); }, []);
 
   const load = async (d) => {
     try {
@@ -51,7 +54,9 @@ export default function Attendance() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black">Take Attendance</h2>
-          <p className="text-sm text-slate-500">Class 10A · FN & AN sessions</p>
+          <p className="text-sm text-slate-500">
+            {classes.length ? classes.map((c) => c.name).join(', ') : 'Your classes'} • FN & AN sessions
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" />

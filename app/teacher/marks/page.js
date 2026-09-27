@@ -1,21 +1,25 @@
 "use client";
 import AppShell from '@/components/AppShell';
 import { useEffect, useState } from 'react';
-import { getStudents, getMarks, saveMarks } from '@/lib/api';
+import { getStudents, getMarks, saveMarks, getClasses } from '@/lib/api';
 
 export default function Marks() {
   const [students, setStudents] = useState([]);
   const [marks, setMarks] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [subject, setSubject] = useState('Mathematics');
   const [examName, setExamName] = useState('Unit Test 1');
   const [entries, setEntries] = useState({});
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Subjects already used in the data, plus the standard curriculum defaults
+  const SUBJECTS = [...new Set([...marks.map((m) => m.subject), 'Mathematics', 'Science', 'English', 'Social Studies', 'Computer Science'])].sort();
+
   const load = async () => {
     try {
-      const [s, m] = await Promise.all([getStudents(), getMarks()]);
-      setStudents(s); setMarks(m);
+      const [s, m, c] = await Promise.all([getStudents(), getMarks(), getClasses()]);
+      setStudents(s); setMarks(m); setClasses(c);
       const init = {};
       m.filter((x) => x.subject === subject && x.exam_name === examName).forEach((x) => { init[x.student_id] = x.score; });
       setEntries(init);
@@ -48,11 +52,13 @@ export default function Marks() {
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black">Add / View Marks</h2>
-          <p className="text-sm text-slate-500">Enter examination marks for Class 10A.</p>
+          <p className="text-sm text-slate-500">
+            Enter examination marks{classes.length ? ` for ${classes.map((c) => c.name).join(', ')}` : ''}.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <select value={subject} onChange={(e) => setSubject(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold">
-            {['Mathematics', 'Science', 'English', 'Social Studies', 'Computer Science'].map((s) => <option key={s}>{s}</option>)}
+            {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
           </select>
           <input value={examName} onChange={(e) => setExamName(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" placeholder="Exam name" />
         </div>

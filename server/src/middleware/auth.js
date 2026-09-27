@@ -2,8 +2,9 @@
  * Authentication & identity middleware.
  *
  * Security model:
- *  1. Bearer tokens are Supabase JWTs — signature VERIFIED (HS256) against
- *     SUPABASE_JWT_SECRET. Claims (`email`, `role=authenticated`) are validated;
+ *  1. Bearer tokens are signed JWTs — signature VERIFIED (HS256) against
+ *     APP_JWT_SECRET (tokens issued by POST /api/auth/login) or
+ *     SUPABASE_JWT_SECRET (Supabase-issued). The email claim is validated and
  *     identity/role are then resolved from the DB — the token `sub` is never
  *     trusted as a user id.
  *  2. Demo headers (x-demo-email / x-demo-role) are ONLY honored when
@@ -33,18 +34,30 @@ async function attachUser(req, res, next) {
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : null;
 
   if (token) {
-    const secret = process.env.SUPABASE_JWT_SECRET;
-    if (!secret) {
-      return res.status(503).json({ error: "Auth configuration error" });
+    // Try the app secret first, then the Supabase secret (both fail closed).
+    let payload = null;
+    for (const secret of [process.env.APP_JWT_SECRET, process.env.SUPABASE_JWT_SECRET]) {
+      if (!secret) continue;
+      try {
+        payload = jwt.verify(token, secret, { algorithms: ["HS256"] }); // rejects forged/expired/malformed
+        break;
+      } catch {
+        /* try the next secret */
+      }
     }
-    let payload;
-    try {
-      payload = jwt.verify(token, secret, { algorithms: ["HS256"] }); // rejects forged/expired/malformed
-    } catch {
+    if (!payload) {
+      if (!process.env.APP_JWT_SECRET && !process.env.SUPABASE_JWT_SECRET) {
+        return res.status(503).json({ error: "Auth configuration error" });
+      }
       return res.status(401).json({ error: "Invalid or expired token" });
     }
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : null;
-    if (!email || !EMAIL_RE.test(email) || payload.role !== "authenticated") {
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(401).json({ error: "Invalid token claims" });
+    }
+    // Supabase tokens must carry role=authenticated; app-issued login tokens
+    // carry the user's real role. Anything else (e.g. role=anon) is rejected.
+    if (!["authenticated", "principal", "teacher", "parent"].includes(payload.role)) {
       return res.status(401).json({ error: "Invalid token claims" });
     }
     const user = await resolveUserByEmail(email);

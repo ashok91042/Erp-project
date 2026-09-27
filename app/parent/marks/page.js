@@ -17,7 +17,7 @@ export default function Marks() {
     <AppShell role="parent" title="Exam Results">
       <div className="mb-5">
         <h2 className="text-2xl font-black">Exam Results</h2>
-        <p className="text-sm text-slate-500">All recorded marks for Class 10A.</p>
+        <p className="text-sm text-slate-500">{marks.length} result(s) for your child — live from the database.</p>
       </div>
       {err && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">API error: {err}</p>}
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">

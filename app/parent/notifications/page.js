@@ -1,3 +1,52 @@
+"use client";
 import AppShell from '@/components/AppShell';
 import Notification from '@/components/Notification';
-export default function Notifications(){return <AppShell role="parent" title="Notifications"><div className="max-w-3xl space-y-3"><Notification type="alert" title="Absence Alert — Diya Sharma" text="Your child was marked absent in the Afternoon session on 25 Sep 2026." time="Mon, 25 Sep 2026, 2:20 PM"/><Notification type="info" title="Exam scheduled" text="Unit Test 2 is scheduled for 24 Sep 2026, 10:00 AM." time="Yesterday"/><Notification type="success" title="Report card published" text="The latest report card is available to view." time="20 Sep 2026"/></div></AppShell>}
+import { useEffect, useState } from 'react';
+import { getStats, getMarks } from '@/lib/api';
+
+const fmt = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+export default function Notifications() {
+  const [items, setItems] = useState([]);
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getStats(), getMarks()])
+      .then(([stats, marks]) => {
+        const list = [
+          ...(stats.absences || []).map((a) => ({
+            type: 'alert',
+            title: `Absence Alert — ${a.student}`,
+            text: `Your child was marked absent (${a.session}) on ${fmt(a.date)}.`,
+            time: fmt(a.date),
+            key: `abs-${a.student}-${a.date}-${a.session}`,
+          })),
+          ...(marks || []).map((m) => ({
+            type: 'info',
+            title: `${m.subject} result published`,
+            text: `${m.full_name} scored ${m.score}/${m.max_score} in ${m.exam_name}.`,
+            time: fmt(m.created_at),
+            key: `mark-${m.id}`,
+          })),
+        ];
+        setItems(list);
+      })
+      .catch((e) => setErr(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <AppShell role="parent" title="Notifications">
+      {err && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">API error: {err}</p>}
+      <div className="max-w-3xl space-y-3">
+        {items.map((n) => <Notification key={n.key} type={n.type} title={n.title} text={n.text} time={n.time} />)}
+        {!loading && items.length === 0 && (
+          <p className="rounded-2xl bg-white p-8 text-center text-slate-400 ring-1 ring-slate-200">No notifications yet.</p>
+        )}
+        {loading && <p className="rounded-2xl bg-white p-8 text-center text-slate-400 ring-1 ring-slate-200">Loading…</p>}
+      </div>
+    </AppShell>
+  );
+}
+

@@ -40,13 +40,18 @@ describe("JWT verification middleware", () => {
   });
 
   test("missing JWT secret fails closed (503), never open", async () => {
-    const saved = process.env.SUPABASE_JWT_SECRET;
-    const token = signToken({ email: "principal@school.edu" }); // sign BEFORE removing secret
+    // clear BOTH signing secrets (app login tokens + Supabase tokens)
+    const savedSupabase = process.env.SUPABASE_JWT_SECRET;
+    const savedApp = process.env.APP_JWT_SECRET;
+    const token = signToken({ email: "principal@school.edu" }); // sign BEFORE removing secrets
     delete process.env.SUPABASE_JWT_SECRET;
+    delete process.env.APP_JWT_SECRET;
     try {
       await request(app).get("/api/requests").set("Authorization", `Bearer ${token}`).expect(503);
     } finally {
-      process.env.SUPABASE_JWT_SECRET = saved;
+      process.env.SUPABASE_JWT_SECRET = savedSupabase;
+      if (savedApp !== undefined) process.env.APP_JWT_SECRET = savedApp;
+      else delete process.env.APP_JWT_SECRET;
     }
   });
 });
