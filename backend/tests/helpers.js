@@ -2,6 +2,13 @@
 // and test-data fixtures that clean up after themselves.
 process.env.NODE_ENV = "test";
 process.env.PORT = "0"; // unused: supertest binds its own ephemeral port
+// The suites authenticate with the seeded demo accounts via the x-demo-email
+// header (TEACHER/PRINCIPAL/PARENT below) rather than logging in each time.
+// backend/.env ships ALLOW_DEMO_HEADERS=false, and dotenv never overrides a
+// variable that is already set, so force it on here — otherwise every
+// demo-header suite gets 401 and the run looks like a real regression.
+// Set before requiring the app (which calls dotenv.config()).
+process.env.ALLOW_DEMO_HEADERS = "true";
 
 const request = require("supertest");
 

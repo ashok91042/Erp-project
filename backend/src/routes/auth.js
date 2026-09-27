@@ -30,11 +30,21 @@ router.post("/login", loginLimiter, async (req, res) => {
     return res.status(400).json({ error: "Enter a valid email and password" });
   }
 
-  const { rows } = await pool.query(
-    "select id, email, full_name, role, password_hash from public.users where lower(email) = lower($1)",
-    [email.trim()]
-  );
-  const user = rows[0];
+  // A database blip must not hang the request: Express 4 does not forward
+  // rejections from async handlers to the error middleware, so an unguarded
+  // query here would leave the browser waiting until it times out with no
+  // usable message. Answer 503 and let the client retry.
+  let user;
+  try {
+    const { rows } = await pool.query(
+      "select id, email, full_name, role, password_hash from public.users where lower(email) = lower($1)",
+      [email.trim()]
+    );
+    user = rows[0];
+  } catch (e) {
+    console.error("[auth] login lookup failed:", e.message);
+    return res.status(503).json({ error: "Database unavailable — please try again" });
+  }
   // Hash a dummy value when the account is unknown so response timing is similar
   const hash = user && user.password_hash ? user.password_hash : "$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012";
   const ok = user && user.password_hash ? await bcrypt.compare(password, hash) : false;
@@ -53,25 +63,40 @@ router.patch("/password", requireRole("principal", "teacher", "parent"), async (
   if (typeof currentPassword !== "string" || typeof newPassword !== "string" || newPassword.length < 8) {
     return res.status(400).json({ error: "Current password and a new password of 8+ characters are required" });
   }
-  const { rows } = await pool.query("select password_hash from public.users where id = $1", [req.user.id]);
-  const current = rows[0] && rows[0].password_hash;
-  if (!current || !(await bcrypt.compare(currentPassword, current))) {
-    return res.status(401).json({ error: "Current password is incorrect" });
+  // Guarded for the same reason as /login: a rejected query in an async Express 4
+  // handler never reaches the error middleware and would hang the request.
+  let current;
+  try {
+    const { rows } = await pool.query("select password_hash from public.users where id = $1", [req.user.id]);
+    current = rows[0] && rows[0].password_hash;
+    if (!current || !(await bcrypt.compare(currentPassword, current))) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+    await pool.query("update public.users set password_hash = $1 where id = $2", [
+      await bcrypt.hash(newPassword, 10),
+      req.user.id,
+    ]);
+  } catch (e) {
+    console.error("[auth] password change failed:", e.message);
+    return res.status(503).json({ error: "Database unavailable — please try again" });
   }
-  await pool.query("update public.users set password_hash = $1 where id = $2", [
-    await bcrypt.hash(newPassword, 10),
-    req.user.id,
-  ]);
   res.json({ updated: true });
 });
 
 /** GET /api/auth/session — validate the stored token (used on app boot). */
 router.get("/session", requireRole("principal", "teacher", "parent"), async (req, res) => {
-  const { rows } = await pool.query(
-    "select id, email, full_name, role from public.users where id = $1",
-    [req.user.id]
-  );
-  res.json({ user: rows[0] || { id: req.user.id, email: req.user.email, role: req.user.role } });
+  let user;
+  try {
+    const { rows } = await pool.query(
+      "select id, email, full_name, role from public.users where id = $1",
+      [req.user.id]
+    );
+    user = rows[0];
+  } catch (e) {
+    console.error("[auth] session lookup failed:", e.message);
+    return res.status(503).json({ error: "Database unavailable — please try again" });
+  }
+  res.json({ user: user || { id: req.user.id, email: req.user.email, role: req.user.role } });
 });
 
 module.exports = router;

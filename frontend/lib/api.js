@@ -1,17 +1,24 @@
 import { getToken } from "./auth";
 
-// Real API layer — talks to the Express backend (server/).
+// Real API layer — talks to the Express backend (backend/).
 //
-// By default we call the backend SAME-ORIGIN ("" → /api/...), which Next.js
-// proxies to it via the rewrite in next.config.mjs. That sidesteps CORS and
-// mixed-content failures ("Failed to fetch") when the app is opened through
-// 127.0.0.1, a different port, or an https tunnel. Set NEXT_PUBLIC_API_BASE
-// (e.g. "http://localhost:4000") to call the API directly instead.
+// LOCAL DEV — the default "" calls the API same-origin (/api/...), which
+// next.config.mjs proxies to the backend via API_ORIGIN. That sidesteps CORS
+// and mixed-content failures ("Failed to fetch") when the app is opened through
+// 127.0.0.1, a different port, or an https tunnel.
+//
+// VERCEL — the default becomes "/api/backend", because vercel.json routes that
+// prefix to the backend *service*. The browser and the API therefore share one
+// origin, exactly as in local dev, so there is no CORS to configure.
+//
+// Override either way with NEXT_PUBLIC_API_BASE (e.g. "http://localhost:4000"
+// to call the API directly, which then requires CORS on the backend).
 //
 // Auth: the bearer token from POST /api/auth/login is sent on every request
 // (see lib/auth.js). The server verifies the signature and resolves the real
 // role from the users table, so the token cannot escalate privileges.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || (process.env.NEXT_PUBLIC_VERCEL_ENV ? "/api/backend" : "");
 
 function authHeaders() {
   const token = getToken();
@@ -29,7 +36,18 @@ export async function api(path, options = {}) {
   });
   let data = null;
   try { data = await res.json(); } catch {}
-  if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    // A non-JSON body means the response never came from the API server: the
+    // Next.js /api rewrite proxy could not reach the backend (it is down, or
+    // not on API_ORIGIN). Every API error path returns JSON, so say what is
+    // actually wrong instead of a bare "Request failed (500)".
+    if (data === null) {
+      throw new Error(
+        `Cannot reach the API (${res.status}). Is the backend running? Start it with: npm run api`
+      );
+    }
+    throw new Error(data?.error || `Request failed (${res.status})`);
+  }
   return data;
 }
 
