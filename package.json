@@ -1,22 +1,15 @@
 {
-  "name": "academic-erp-client",
+  "name": "academic-erp",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "api": "npm --prefix server start",
-    "api:dev": "npm --prefix server run dev",
-    "test": "npm --prefix server test"
-  },
-  "dependencies": {
-    "@tailwindcss/postcss": "^4.1.13",
-    "lucide-react": "^0.468.0",
-    "next": "^15.5.3",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "tailwindcss": "^4.1.13"
-  },
-  "devDependencies": {}
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "api": "npm --prefix backend start",
+    "api:dev": "npm --prefix backend run dev",
+    "db:init": "npm --prefix backend run db:init",
+    "test": "npm --prefix backend test",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  }
 }

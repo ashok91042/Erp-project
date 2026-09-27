@@ -1,6 +1,26 @@
 # AcademicERP — React + Next.js + Tailwind CSS
 
-Frontend-only AcademicERP dashboard inspired by the supplied UI reference.
+Academic ERP dashboard with a **frontend** and a **backend**, split into two folders.
+
+## Project structure
+
+```
+academic-erp-client/
+├── frontend/          Next.js 15 App Router client (port 3000)
+│   ├── app/           routes: /login /portal /principal /teacher /parent
+│   ├── components/    shared UI (AppShell, Sidebar, tables, charts, modal…)
+│   ├── lib/           api.js, auth.js, supabase.js
+│   ├── public/        static assets
+│   ├── next.config.mjs  proxies /api/* → backend (API_ORIGIN)
+│   └── package.json
+├── backend/           Express + Postgres API (port 4000)
+│   ├── src/           server.js, routes/, middleware/, db/, mailer.js
+│   ├── sql/           schema.sql (tables, RLS, seed data)
+│   ├── tests/         Jest suites
+│   ├── scripts/       seed-passwords.js
+│   └── package.json
+└── package.json       root scripts that drive both
+```
 
 ## Included
 - Next.js App Router
@@ -8,25 +28,26 @@ Frontend-only AcademicERP dashboard inspired by the supplied UI reference.
 - Tailwind CSS
 - **Email + password login** (bcrypt hashes, signed JWT session, `Authorization: Bearer …`)
 - Role-scoped dashboards, tables and charts — all numbers come from the live API
-- Express API (in `server/`) with Supabase Postgres, RBAC and row-level scoping
+- Express API (in `backend/`) with Supabase Postgres, RBAC and row-level scoping
 - Principal: users (add/edit/delete students), students, teachers, parents, attendance, marks, requests, reports, settings
 - Teacher: classes, students, attendance, marks, requests, notifications
 - Parent: child, attendance, marks, notifications, settings
-- Reusable components, Supabase integration placeholder in `lib/supabase.js`
+- Reusable components, Supabase integration placeholder in `frontend/lib/supabase.js`
 
 ## Run in VS Code
 
 The app needs **two processes**: the Next.js frontend (port 3000) and the Express API (port 4000).
 
+Install both:
+
 ```bash
-cd academic-erp-client
-npm install
+npm run install:all
 ```
 
 Terminal 1 — API backend (required for data):
 
 ```bash
-npm run api        # or: cd server && npm install && npm start
+npm run api        # or: cd backend && npm install && npm start
 ```
 
 Terminal 2 — frontend:
@@ -57,7 +78,7 @@ Demo accounts (all use the password `demo1234`):
 Set (or reset) the demo passwords with:
 
 ```bash
-cd server
+cd backend
 node scripts/seed-passwords.js            # uses demo1234
 node scripts/seed-passwords.js MyPass123  # custom
 ```
@@ -67,7 +88,7 @@ Users can change their own password from the API
 
 ### Server configuration
 
-Add to `server/.env` (see `server/.env.example`):
+Add to `backend/.env`:
 
 ```bash
 APP_JWT_SECRET=<long random string>   # signs session tokens — keep private
@@ -82,3 +103,5 @@ Login fails closed with `503` if no signing secret is set.
 ```bash
 npm test           # runs the server Jest suite against the real database
 ```
+
+# Erp-project

@@ -1,9 +1,0 @@
-✔ Academic ERP API listening on http://localhost:4000
-  DB: configured
-  SMTP: not set — absence alerts log to console (dev mode)
-[mailer:dev] Request "Leave approval for workshop" approved — note: Approved. Enjoy! → lakshmi@school.edu
-[mailer:dev] Request "E2E workflow test" approved → lakshmi@school.edu
-[mailer:dev] Absence alert for Sneha Nair (10A-04) — Afternoon (AN) on 2026-09-24 → no recipient
-[mailer:dev] Absence alert for Ananya Reddy (10A-02) — Full Day (FN & AN) on 2026-09-23 → no recipient
-[mailer:dev] Absence alert for Ananya Reddy (10A-02) — Full Day (FN & AN) on 2026-09-23 → no recipient
-[mailer:dev] Absence alert for Rahul Verma (10A-03) — Afternoon (AN) on 2026-09-23 → no recipient
