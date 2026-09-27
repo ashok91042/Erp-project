@@ -20,7 +20,6 @@ academic-erp-client/
 │   ├── scripts/       seed-passwords.js
 │   └── package.json
 └── package.json       root scripts that drive both
-└── vercel.json       deploys both as services of one Vercel project
 ```
 
 ## Included
@@ -104,64 +103,5 @@ Login fails closed with `503` if no signing secret is set.
 ```bash
 npm test           # runs the server Jest suite against the real database
 ```
-
-## Deploy to Vercel
-
-`vercel.json` deploys the repo as **one project with two services** — a Next.js
-frontend and the Express API — behind a single domain. Push the repo, import it
-at [vercel.com/new](https://vercel.com/new), and set the environment variables
-below. Each service is built from its own `root`, so there is no root build
-command to configure.
-
-### 1. Environment variables
-
-The `.env` files are gitignored, so nothing is deployed with the repo — set
-these in **Project → Settings → Environment Variables**.
-
-| Variable | Service | Required | Notes |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | backend | ✅ | Supabase Postgres. Use the **transaction pooler** (port `6543`) — serverless opens a lot of concurrent connections. |
-| `APP_JWT_SECRET` | backend | ✅ | Signs session tokens. Login fails closed with `503` without it. |
-| `ALLOW_DEMO_HEADERS` | backend | ✅ | Must be `false`, or anyone can impersonate a principal. |
-| `CORS_ORIGIN` | backend | ➖ | Not needed — the app and the API share one origin. |
-| `NEXT_PUBLIC_API_BASE` | frontend | ➖ | Leave empty. It defaults to `/api/backend` on Vercel. |
-| `API_ORIGIN` | frontend | ❌ | Leave **unset** here. Setting it re-enables the Next.js proxy, which points at `localhost:4000` and breaks the API. |
-| `DB_POOL_MAX` | backend | ➖ | Postgres connections per instance (default 5 on Vercel). |
-
-### 2. Seed the database
-
-The schema lives in `backend/sql/schema.sql`. Run it once against your Supabase
-project (SQL editor, or `psql "$DATABASE_URL" -f backend/sql/schema.sql`), then
-optionally set the demo passwords:
-
-```bash
-cd backend
-node scripts/seed-passwords.js
-```
-
-### 3. Verify
-
-Open the deployment and check the API is alive through the service prefix:
-
-```
-https://<your-domain>/api/backend/api/health   →  {"status":"ok", ...}
-```
-
-### How the routing works
-
-```
-/api/backend/api/health  ──▶ rewrite 1 ──▶ backend service
-                                            request.path transform strips
-                                            "/api/backend" ⇒ Express sees
-                                            /api/health
-/(.*)                     ──▶ rewrite 2 ──▶ frontend service (Next.js)
-```
-
-The `request.path` transform inside the backend service is required: Vercel
-hands a service the **original** request path, so without it Express would look
-for `/api/backend/api/health` and return `404 {"error":"Not found"}`.
-
-Locally, `vercel dev` serves the same routing. Plain `npm run dev` +
-`npm run api` keeps using the Next.js proxy instead — both are supported.
 
 # Erp-project
