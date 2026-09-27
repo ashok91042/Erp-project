@@ -104,4 +104,35 @@ Login fails closed with `503` if no signing secret is set.
 npm test           # runs the server Jest suite against the real database
 ```
 
+## Deploy to Vercel
+
+Both apps deploy as **two services in one Vercel project** (Beta), configured by
+`vercel.json` at the repo root:
+
+```json
+{ "services": { "frontend": { "root": "frontend/" },
+                "backend":  { "root": "backend/", "entrypoint": "src/server.js" } },
+  "rewrites": [ { "source": "/api/(.*)", "destination": { "service": "backend" } },
+                { "source": "/(.*)",      "destination": { "service": "frontend" } } ] }
+```
+
+Set the Vercel **Root Directory** to the repo root (not `frontend/`) so both
+services are found. Add the `backend/.env` values as project env vars
+(`DATABASE_URL`, `APP_JWT_SECRET`, `CORS_ORIGIN`, `ALLOW_DEMO_HEADERS=false`).
+
+Two things that are easy to get wrong here:
+
+- **Do not prefix the API with `/api/backend`.** A service destination passes the
+  *original* request path through to the service (the optional `path` field only
+  selects a route, it does not rewrite the URL the code sees), and every Express
+  route is mounted under `/api`. `lib/api.js` therefore calls `/api/...` in both
+  dev and production; only *which server* answers changes.
+- **Leave `API_ORIGIN` and `NEXT_PUBLIC_API_BASE` unset on Vercel.** Setting
+  either re-enables the local-dev proxy in `next.config.mjs`, which would forward
+  requests to `http://localhost:4000` and break platform routing.
+
+> A `destination` that is a full URL (`https://backend.example.com/:path*`) is
+> only for a backend hosted as a *separate* project/deployment — it will not
+> resolve to a service in this one.
+
 # Erp-project

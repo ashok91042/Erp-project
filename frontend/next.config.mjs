@@ -3,11 +3,11 @@
 // where the API is hosted elsewhere.
 const API_ORIGIN = process.env.API_ORIGIN || "http://localhost:4000";
 
-// On Vercel the two apps are separate services of ONE project, and vercel.json
-// routes /api/backend/* straight to the Express backend. A rewrite here would
-// hijack those requests and forward them to http://localhost:4000, which does
-// not exist inside a Vercel Function — so the proxy is local-dev only, unless
-// an explicit API_ORIGIN says the API really does live at another origin.
+// On Vercel, vercel.json routes /api/* to the "backend" service in the same
+// project. A rewrite here would hijack those requests and forward them to
+// http://localhost:4000, which does not exist inside a Vercel Function — so the
+// proxy is local-dev only, unless an explicit API_ORIGIN says the API really
+// does live at another origin.
 const USE_DEV_PROXY = !process.env.VERCEL || Boolean(process.env.API_ORIGIN);
 
 const nextConfig = {

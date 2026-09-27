@@ -738,8 +738,14 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = Number(process.env.PORT || 4000);
-// Export the app for supertest/Jest; only auto-listen when run directly
-if (require.main === module) {
+// Listen unless Jest is driving the process, so both `node src/server.js` and
+// Vercel bind the port. `require.main === module` is NOT sufficient on its own:
+// Vercel's Node runtime *imports* the entrypoint instead of running it as main,
+// so require.main is never this module and the server would never start (every
+// request would hang until the function timed out). tests/helpers.js sets
+// NODE_ENV=test before requiring this file, so supertest still gets the bare
+// app with no listener.
+if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`✔ Academic ERP API listening on http://localhost:${PORT}`);
     console.log(`  DB: ${process.env.DATABASE_URL ? "configured" : "MISSING — set DATABASE_URL in server/.env"}`);

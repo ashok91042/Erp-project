@@ -7,9 +7,14 @@ import { getToken } from "./auth";
 // and mixed-content failures ("Failed to fetch") when the app is opened through
 // 127.0.0.1, a different port, or an https tunnel.
 //
-// VERCEL — the default becomes "/api/backend", because vercel.json routes that
-// prefix to the backend *service*. The browser and the API therefore share one
-// origin, exactly as in local dev, so there is no CORS to configure.
+// VERCEL — vercel.json routes /api/* to the "backend" *service*, so the browser
+// and the API share one origin here too and there is no CORS to configure.
+//
+// There is deliberately NO "/api/backend" prefix. Vercel Services hands the
+// ORIGINAL request path to the service — a service destination's `path` field
+// only selects a route inside the service, it does not rewrite the URL the code
+// sees — and every Express route is mounted under /api. A prefix would reach
+// Express as /api/backend/api/... and 404.
 //
 // Override either way with NEXT_PUBLIC_API_BASE (e.g. "http://localhost:4000"
 // to call the API directly, which then requires CORS on the backend).
@@ -17,8 +22,7 @@ import { getToken } from "./auth";
 // Auth: the bearer token from POST /api/auth/login is sent on every request
 // (see lib/auth.js). The server verifies the signature and resolves the real
 // role from the users table, so the token cannot escalate privileges.
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || (process.env.NEXT_PUBLIC_VERCEL_ENV ? "/api/backend" : "");
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
 
 function authHeaders() {
   const token = getToken();
