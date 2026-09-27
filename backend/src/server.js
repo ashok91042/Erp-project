@@ -41,6 +41,18 @@ app.use(
 app.use(express.json({ limit: "100kb" }));
 app.use(attachUser);
 
+// Root route — lightweight service banner so hitting the bare host gives
+// something useful instead of the 404 catch-all. Deliberately does not touch
+// the DB: /api/health is the connectivity check.
+app.get("/", (_req, res) => {
+  res.json({
+    service: "academic-erp-api",
+    status: "ok",
+    health: "/api/health",
+    docs: "see backend/README.md for the endpoint list",
+  });
+});
+
 // Health check — verifies DB connectivity
 app.get("/api/health", async (_req, res) => {
   try {

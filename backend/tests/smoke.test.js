@@ -2,6 +2,12 @@
 const { request, app, pool, TEACHER } = require("./helpers");
 
 describe("API smoke — boot & auth wiring", () => {
+  test("GET / returns the service banner", async () => {
+    const res = await request(app).get("/").expect(200);
+    expect(res.body.status).toBe("ok");
+    expect(res.body.health).toBe("/api/health");
+  });
+
   test("GET /api/health reports DB connectivity", async () => {
     const res = await request(app).get("/api/health").expect(200);
     expect(res.body.status).toBe("ok");

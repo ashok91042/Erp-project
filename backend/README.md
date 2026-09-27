@@ -12,6 +12,7 @@ Configuration lives in `backend/.env` (DATABASE_URL, SUPABASE_ANON_KEY, SMTP cre
 ## Endpoints
 | Method | Path | Role required | Description |
 |---|---|---|---|
+| GET  | `/` | — | Service banner (name, status, pointers) |
 | GET  | `/api/health` | — | DB connectivity check |
 | GET  | `/api/students` | — | Class roster |
 | GET / POST | `/api/marks` | teacher/principal for POST | Marks entry (upsert by student+subject+exam) |
